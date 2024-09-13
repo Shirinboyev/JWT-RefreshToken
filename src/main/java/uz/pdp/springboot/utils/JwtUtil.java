@@ -3,9 +3,12 @@ package uz.pdp.springboot.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,11 +17,16 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_HS256_KEY = "34e7f550e2715c958372db43db8f68c0ea686807bf7eab4f22f2ee673df0f929";
+    private static final String SECRET_HS256_KEY = "34e7f550e2715c958372db43db8f68c0ea686807bf7eab4f22f2ee673df0f929";
 
-    public String generateAccessToken(String username) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username, 10 * 60 * 1000); // 10 daqiqa
+
+    public String generateToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public String generateRefreshToken(String username) {
@@ -62,12 +70,7 @@ public class JwtUtil {
         return Jwts.parser().setSigningKey(SECRET_HS256_KEY).parseClaimsJws(token).getBody();
     }
 
-    public String getSubject(String token) {
-        return Jwts.parser()
-                .setSigningKey(SECRET_HS256_KEY)
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+    public static Key getSignKey() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_HS256_KEY));
     }
-
 }

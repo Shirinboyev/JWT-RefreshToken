@@ -6,12 +6,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class TokenResponse {
+public class Tokens {
     private String accessToken;
     private String refreshToken;
 
-    public TokenResponse(String accessToken, String refreshToken) {
+    public Tokens(String accessToken, String refreshToken) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
     }
-}
+    }

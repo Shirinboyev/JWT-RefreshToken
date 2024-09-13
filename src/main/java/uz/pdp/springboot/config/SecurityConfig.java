@@ -21,6 +21,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import uz.pdp.springboot.dto.ErrorBodyDTO;
+import uz.pdp.springboot.filter.JwtTokenFilter;
+import uz.pdp.springboot.utils.JwtUtil;
 
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
@@ -59,29 +61,25 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable);
-
-        http.authorizeHttpRequests((auth)->{
-                    auth
-                            .requestMatchers(WHITE_LIST).permitAll()
-                            .requestMatchers("/auth/login/**","/auth/refresh-token/**").authenticated();
-                }
-        );
-        http.userDetailsService(userDetailsService);
-        http.exceptionHandling((handler)->{
-            handler.accessDeniedHandler(accessDeniedHandler);
-            handler.authenticationEntryPoint(authenticationEntryPoint);
-        });
-
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-
-        http.sessionManagement(session->{
-            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        });
-
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenFilter jwtTokenFilter) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(WHITE_LIST).permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement((session) -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .exceptionHandling((exception) -> exception
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
+
 
 
 

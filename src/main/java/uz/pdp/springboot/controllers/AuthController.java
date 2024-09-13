@@ -1,69 +1,64 @@
 package uz.pdp.springboot.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import uz.pdp.springboot.dto.AuthenticationDto;
-import uz.pdp.springboot.model.*;
+import uz.pdp.springboot.dto.RefreshTokenDto;
+import uz.pdp.springboot.model.RefreshTokenRequest;
+import uz.pdp.springboot.model.Tokens;
+import uz.pdp.springboot.model.User;
 import uz.pdp.springboot.repository.UserRepository;
-import uz.pdp.springboot.service.JwtService;
+import uz.pdp.springboot.service.CustomUserDetailsService;
+import uz.pdp.springboot.service.RefreshTokenService;
 import uz.pdp.springboot.utils.JwtUtil;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserRepository userRepository;
+    private final UserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
-    private final JwtUtil jwtUtil;
+    private final JwtUtil jwtTokenUtil;
+    private final CustomUserDetailsService customUserDetailsService;
+    private final RefreshTokenService refreshTokenService;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
-        this.userRepository = userRepository;
+    public AuthController(UserRepository authUserRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtil jwtTokenUtil, CustomUserDetailsService customUserDetailsService, RefreshTokenService refreshTokenService, RefreshTokenService refreshTokenService1) {
+        this.authUserRepository = authUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
-        this.jwtUtil = jwtUtil;
-    }
-
-    @Autowired
-    private JwtService jwtService;
-
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        String accessToken = jwtService.generateAccessToken(loginRequest.getUsername());
-        String refreshToken = jwtService.generateRefreshToken(loginRequest.getUsername());
-        return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken));
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.customUserDetailsService = customUserDetailsService;
+        this.refreshTokenService = refreshTokenService1;
     }
 
     @PostMapping("/token")
-    public ResponseEntity<?> generateToken(@RequestParam String username) {
-        String accessToken = jwtUtil.generateAccessToken(username);
-        String refreshToken = jwtUtil.generateRefreshToken(username);
-        return ResponseEntity.ok(new TokenResponse(accessToken, refreshToken));
+    public Tokens getToken(@RequestBody RefreshTokenDto tokenRequestDTO) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(tokenRequestDTO.username(), tokenRequestDTO.password());
+        authenticationManager.authenticate(authenticationToken);
+        String refreshToken = jwtTokenUtil.generateRefreshToken(tokenRequestDTO.username());
+        String accessToken = jwtTokenUtil.generateRefreshToken(tokenRequestDTO.username());
+        refreshTokenService.save(refreshToken, tokenRequestDTO.username());
+        return new Tokens(accessToken, refreshToken);
+    }
+
+    @PostMapping("/register")
+    public RefreshTokenDto register(@RequestBody RefreshTokenDto user) {
+        authUserRepository.save(User.builder()
+                .username(user.password())
+                .password(passwordEncoder.encode(user.password()))
+                .role("USER")
+                .build());
+        return user;
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        String refreshToken = refreshTokenRequest.getRefreshToken();
-        if (jwtService.validateRefreshToken(refreshToken, "refreshSecretKey")) {
-            String username = jwtService.getUsernameFromToken(refreshToken, "refreshSecretKey");
-            String newAccessToken = jwtService.generateAccessToken(username);
-            return ResponseEntity.ok(new AuthResponse(newAccessToken, refreshToken));
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token yaroqsiz!");
+    public Tokens refresh(@RequestBody Tokens tokens) {
+        String username = jwtTokenUtil.extractUsername(tokens.getRefreshToken());
+        jwtTokenUtil.validateToken(tokens.getRefreshToken(),
+                customUserDetailsService.loadUserByUsername(username));
+        refreshTokenService.findByToken(tokens.getRefreshToken());
+        return new Tokens(jwtTokenUtil.generateToken(username), null);
     }
-    @PostMapping("/authentication")
-    public ResponseEntity<AuthenticationDto> authentication(@RequestParam("username")String username, @RequestParam("password")String password){
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
-        Authentication authenticate = authenticationManager.authenticate(authenticationToken);
-        String accessToken = jwtUtil.generateAccessToken(username);
-        return ResponseEntity.ok(new AuthenticationDto(accessToken));
-    }
-
-
 }

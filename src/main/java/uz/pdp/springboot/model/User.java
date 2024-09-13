@@ -1,21 +1,20 @@
 package uz.pdp.springboot.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-@Entity
-@Getter
 @Setter
-@Table(name = "users")
+@Getter
+@Entity
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class User extends BaseEntity{
-    private String fullname;
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String username;
     private String password;
+    private String role;
 }
