@@ -65,7 +65,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests((auth)->{
                     auth
                             .requestMatchers(WHITE_LIST).permitAll()
-                            .requestMatchers("/**").authenticated();
+                            .requestMatchers("/auth/login/**","/auth/refresh-token/**").authenticated();
                 }
         );
         http.userDetailsService(userDetailsService);

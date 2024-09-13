@@ -18,7 +18,6 @@ public class JwtService {
                 .compact();
     }
 
-    // Refresh token yaratish
     public String generateRefreshToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
@@ -28,7 +27,6 @@ public class JwtService {
                 .compact();
     }
 
-    // Refresh tokenni tasdiqlash
     public boolean validateRefreshToken(String token, String refreshSecretKey) {
         try {
             Jwts.parser().setSigningKey("refreshSecretKey").parseClaimsJws(token);
@@ -38,7 +36,6 @@ public class JwtService {
         }
     }
 
-    // Token ichidan foydalanuvchi nomini olish
     public String getUsernameFromToken(String token, String refreshSecretKey) {
         return Jwts.parser().setSigningKey("secretKey").parseClaimsJws(token).getBody().getSubject();
     }
