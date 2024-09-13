@@ -29,7 +29,7 @@ public class JwtService {
     }
 
     // Refresh tokenni tasdiqlash
-    public boolean validateRefreshToken(String token) {
+    public boolean validateRefreshToken(String token, String refreshSecretKey) {
         try {
             Jwts.parser().setSigningKey("refreshSecretKey").parseClaimsJws(token);
             return true;
@@ -39,7 +39,7 @@ public class JwtService {
     }
 
     // Token ichidan foydalanuvchi nomini olish
-    public String getUsernameFromToken(String token) {
+    public String getUsernameFromToken(String token, String refreshSecretKey) {
         return Jwts.parser().setSigningKey("secretKey").parseClaimsJws(token).getBody().getSubject();
     }
 }
