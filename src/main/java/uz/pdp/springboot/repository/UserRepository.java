@@ -8,8 +8,8 @@ import uz.pdp.springboot.model.User;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Integer> {
-    Optional<User> findFirstByUsername(String username);
+    Optional<User> findByUsername(String username);
+
     @Query("SELECT au.id FROM User au WHERE au.username = :username")
     Long getIdWithUsername(@Param("username") String username);
-
 }

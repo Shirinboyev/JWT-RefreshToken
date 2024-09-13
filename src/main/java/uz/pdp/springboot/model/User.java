@@ -8,6 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Entity
 @Builder
+@Table(name = "users")
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {

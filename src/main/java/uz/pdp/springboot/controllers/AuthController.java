@@ -2,6 +2,7 @@ package uz.pdp.springboot.controllers;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import uz.pdp.springboot.dto.RefreshTokenDto;
@@ -46,10 +47,11 @@ public class AuthController {
     @PostMapping("/register")
     public RefreshTokenDto register(@RequestBody RefreshTokenDto user) {
         authUserRepository.save(User.builder()
-                .username(user.password())
-                .password(passwordEncoder.encode(user.password()))
+                .username(user.username())
+                .password(passwordEncoder.encode(user.username()))
                 .role("USER")
                 .build());
+
         return user;
     }
 
